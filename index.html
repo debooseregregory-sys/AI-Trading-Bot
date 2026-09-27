@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'self' https://data-api.binance.vision; form-action 'none'; object-src 'none'; base-uri 'none';">
+  <meta name="referrer" content="no-referrer">
+  <title>AI Crypto Trading Assistant — Fase 8</title>
+  <link rel="stylesheet" href="src/styles.css">
+  <link rel="stylesheet" href="src/exchange.css">
+  <script src="src/indicators.js" defer></script>
+  <script src="src/signals.js" defer></script>
+  <script src="src/backtest.js" defer></script>
+  <script src="src/paper-trading.js" defer></script>
+  <script src="src/ai-bridge.js" defer></script>
+  <script src="src/app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Hoofdnavigatie">
+      <a class="brand" href="#overzicht" aria-label="AI Crypto Trading Assistant startpagina">
+        <span class="brand-mark" aria-hidden="true">₿</span>
+        <span><strong>AI Crypto</strong><small>Trading Assistant</small></span>
+      </a>
+      <div class="nav-label">WERKRUIMTE</div>
+      <a class="nav-item active" href="#overzicht"><span aria-hidden="true">▦</span> Overzicht</a>
+      <a class="nav-item" href="#markt"><span aria-hidden="true">⌁</span> Markt</a>
+      <a class="nav-item" href="#signaal"><span aria-hidden="true">✳</span> Signaalscanner</a>
+      <a class="nav-item" href="#ai-analyse"><span aria-hidden="true">✧</span> AI-analyse</a>
+      <a class="nav-item" href="#backtesting"><span aria-hidden="true">▤</span> Backtesting</a>
+      <a class="nav-item" href="#paper-trading"><span aria-hidden="true">◫</span> Paper trading</a>
+      <a class="nav-item" href="#historiek"><span aria-hidden="true">◷</span> Historiek</a>
+      <a class="nav-item" href="#exchange"><span aria-hidden="true">⇄</span> Exchange</a>
+      <div class="sidebar-bottom"><div class="offline-indicator"><span></span> Alleen-lezen marktdata</div><small>FASE 8 · READ-ONLY EXCHANGE</small></div>
+    </aside>
+
+    <main id="overzicht" class="main-content">
+      <header class="topbar">
+        <div><div class="eyebrow">JOUW PERSOONLIJKE DASHBOARD</div><h1>Goedendag</h1></div>
+        <div class="topbar-right"><span class="paper-mode-badge">PAPER TRADING · VIRTUEEL GELD</span><span class="demo-chip"><span></span> Publieke marktgegevens</span><span class="avatar" aria-label="Profiel">A</span></div>
+      </header>
+
+      <section class="welcome-card" aria-labelledby="phase-title">
+        <div class="welcome-copy"><div class="phase-pill"><span></span> FASE 8 — EXCHANGE ALLEEN LEZEN</div><h2 id="phase-title">AI Crypto Trading Assistant</h2><p>Volg openbare marktgegevens en oefen met blijvend opgeslagen virtuele transacties.</p><div class="safe-mode"><span class="shield" aria-hidden="true">✓</span><span><strong>PAPER TRADING · VIRTUEEL GELD</strong><small>Geen echte orders · Geen geldverplaatsingen · Geen opnames</small></span></div></div>
+        <div class="orbit-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="coin">₿</div><span class="spark spark-one">✦</span><span class="spark spark-two">✧</span></div>
+      </section>
+
+      <section class="section-heading" id="paper-trading"><div><div class="eyebrow">FASE 7 · RISICOBEHEER VOOR PAPER TRADING</div><h2>Paper trading</h2></div><span class="paper-mode-badge">PAPER TRADING · VIRTUEEL GELD</span></section>
+      <section class="panel paper-safety-banner" role="note"><strong>Alle bedragen en transacties op deze pagina zijn uitsluitend virtueel.</strong><span>De oefenmodule ontvangt alleen openbare marktkoersen en technische signalen. Hij heeft geen verbinding met handelsorders, wallets, geldtransfers of opnames. Dit blijft volledig gescheiden van eventuele toekomstige echte handel.</span><span id="paper-ai-note">AI-analyse is niet ingesteld. Oefenhandel gebruikt alleen de technische signalen uit Fase 3.</span></section>
+      <section class="panel paper-settings-panel" aria-label="Instellingen van de paper-tradingrekening">
+        <div class="history-head"><div class="panel-title"><span class="title-icon green">◫</span><div><h3>Oefenrekening en risicoregels</h3><small>De rekening en geschiedenis worden lokaal op deze computer bewaard</small></div></div><span id="paper-status-badge" class="paper-state-badge">NOG NIET INGESTELD</span></div>
+        <div class="paper-settings-grid">
+          <label class="paper-field paper-symbol-field">Volg deze munten<input id="paper-symbol-search" type="search" placeholder="Zoek bijvoorbeeld BTC of SOL" autocomplete="off"><select id="paper-symbols" multiple size="6" aria-label="Selecteer munten voor paper trading"><option value="">Markten worden geladen…</option></select><small>Maximaal 20 munten. Gebruik Ctrl+klik voor meerdere munten.</small><div class="paper-select-buttons"><button type="button" id="paper-use-watchlist">Neem app-watchlist over</button><button type="button" id="paper-use-selected">Neem marktselectie over</button></div></label>
+          <label class="paper-field">Virtueel startkapitaal (€)<input id="paper-capital" type="number" min="100" max="10000000" step="100" value="10000"><small>Bij een bestaande rekening verandert dit alleen na resetten.</small></label>
+          <label class="paper-field">Kosten per koop/verkoop (%)<input id="paper-fee" type="number" min="0" max="5" step="0.01" value="0.10"></label>
+          <label class="paper-field">Slippage per koop/verkoop (%)<input id="paper-slippage" type="number" min="0" max="5" step="0.01" value="0.05"></label>
+          <label class="paper-field">Maximaal bedrag per positie (€)<input id="paper-max-position" type="number" min="1" max="10000000" step="50" value="1000"></label>
+          <label class="paper-field">Maximaal deel van saldo per positie (%)<input id="paper-max-position-percent" type="number" min="1" max="100" step="1" value="10"></label>
+          <label class="paper-field">Maximaal aantal open posities<input id="paper-max-open" type="number" min="1" max="20" step="1" value="3"></label>
+          <label class="paper-field">Maximale totale blootstelling (%)<input id="paper-max-exposure" type="number" min="1" max="100" step="1" value="50"></label>
+          <label class="paper-field">Risicoprofiel<select id="paper-risk-profile"><option value="cautious">Voorzichtig</option><option value="balanced" selected>Gemiddeld</option><option value="aggressive">Agressief</option></select><small>Profielkeuze vult concrete waarden in; pas alles hieronder zelf aan.</small></label>
+          <label class="paper-field">Maximaal risico per transactie (%)<input id="paper-risk-trade" type="number" min="0.1" max="10" step="0.1" value="1"><small>Bij €10.000 en 1% is maximaal gepland verlies €100.</small></label>
+          <label class="paper-field">Maximaal totaal open risico (%)<input id="paper-risk-total" type="number" min="0.1" max="50" step="0.1" value="3"></label>
+          <label class="paper-field">Dagelijkse verlieslimiet (%)<input id="paper-daily-loss" type="number" min="0.1" max="50" step="0.1" value="3"></label>
+          <label class="paper-field">Maximale drawdown (%)<input id="paper-max-drawdown" type="number" min="1" max="90" step="1" value="15"></label>
+          <label class="paper-field">Minimale risico/rendement-verhouding<input id="paper-min-rr" type="number" min="0.1" max="20" step="0.1" value="1.5"><small>1,5 betekent minstens €1,50 mogelijk rendement per €1 risico.</small></label>
+          <label class="paper-field">Stop-lossmethode<select id="paper-stop-mode"><option value="percent">Percentage van instap</option><option value="fixed">Vaste prijsafstand in euro</option></select></label>
+          <label class="paper-field">Stop-loss (%)<input id="paper-stop-percent" type="number" min="0.1" max="90" step="0.1" value="5"></label>
+          <label class="paper-field">Vaste stop-lossafstand per munt (€)<input id="paper-stop-fixed" type="number" min="0" step="0.01" value="0"><small>Alleen gebruikt bij vaste prijsafstand.</small></label>
+          <label class="paper-field">Take-profit (%)<input id="paper-take-profit" type="number" min="0.1" max="500" step="0.1" value="10"><small>Vereist om de minimale risico/rendement-verhouding te controleren.</small></label>
+          <label class="paper-field">Automatisch verversen<select id="paper-interval"><option value="1">Elke 1 minuut</option><option value="5">Elke 5 minuten</option><option value="15">Elke 15 minuten</option></select></label>
+        </div>
+        <div class="paper-controls"><button type="button" id="paper-save-settings" class="scan-button secondary">Instellingen bewaren</button><button type="button" id="paper-start" class="scan-button">Start paper trading</button><button type="button" id="paper-pause" class="scan-button secondary" disabled>Pauze</button><button type="button" id="paper-stop" class="scan-button secondary" disabled>Stop</button><button type="button" id="paper-reset" class="paper-reset-button" disabled>Reset paper trading</button><span id="paper-status" role="status">De lokale oefenrekening wordt gecontroleerd…</span></div>
+        <div id="paper-error" class="paper-error" role="alert" hidden></div>
+        <div class="paper-rules-note"><strong>Profielwaarden:</strong> Voorzichtig: 0,5% risico per trade, €500 en 5% max per positie, 2 posities, 25% blootstelling, 1,5% totaalrisico, 2% dagverlies, 10% drawdown, 1:1,5 risico/rendement. Gemiddeld: 1%, €1.000 en 10%, 3 posities, 50%, 3%, 3%, 15%, 1:1,5. Agressief: 2%, €2.000 en 20%, 5 posities, 75%, 6%, 5%, 25%, 1:1. Dit zijn oefeninstellingen, geen advies.</div>
+        <div class="paper-rules-note">Bij pauze blijven posities zichtbaar, maar worden alle virtuele openingen én sluitingen stilgezet. Verse prijzen kunnen wel worden bijgewerkt. Bij stop stopt ook het automatisch volgen. Open posities en resultaten blijven bewaard. Hervatten gebruikt alleen dan opnieuw verse marktgegevens.</div>
+      </section>
+
+      <section class="panel paper-portfolio-panel" aria-label="Virtuele portefeuille">
+        <div class="history-head"><div class="panel-title"><span class="title-icon blue">▤</span><div><h3>Virtuele portefeuille</h3><small id="paper-portfolio-update">Nog geen actuele marktupdate</small></div></div><span id="paper-live-state" class="paper-live-state">WACHT OP START</span></div>
+        <div class="paper-portfolio-grid">
+          <div><small>Virtueel startkapitaal</small><strong id="paper-metric-start">€10.000,00</strong></div>
+          <div><small>Beschikbare virtuele cash</small><strong id="paper-metric-cash">€10.000,00</strong></div>
+          <div><small>Waarde open posities</small><strong id="paper-metric-positions">€0,00</strong></div>
+          <div><small>Totale portefeuille</small><strong id="paper-metric-total">€10.000,00</strong></div>
+          <div><small>Gerealiseerd resultaat</small><strong id="paper-metric-realized">€0,00</strong></div>
+          <div><small>Ongerealiseerd resultaat</small><strong id="paper-metric-unrealized">€0,00</strong></div>
+          <div><small>Totaal resultaat</small><strong id="paper-metric-profit">€0,00</strong></div>
+          <div><small>Rendement</small><strong id="paper-metric-return">0,00%</strong></div>
+          <div><small>Vandaag</small><strong id="paper-metric-today">0 transacties · €0,00</strong></div>
+        </div>
+        <div class="paper-portfolio-note">De waarde van open posities is geschat alsof die nu virtueel worden gesloten; daarbij tellen de ingestelde kosten en slippage mee. Dat is een simulatie en kan afwijken van echte uitvoering.</div>
+      </section>
+
+      <section class="panel paper-risk-dashboard" aria-label="Risicodashboard"><div class="history-head"><div class="panel-title"><span class="title-icon violet">!</span><div><h3>Risicobeheer</h3><small>Risico wordt opnieuw gecontroleerd vóór iedere virtuele positie</small></div></div><button type="button" id="paper-risk-resume" class="scan-button secondary" hidden>Risicoblokkade handmatig hervatten</button></div><div id="paper-risk-warning" class="paper-risk-warning" role="status">Er zijn nog geen risicowaarschuwingen.</div><div id="paper-risk-metrics" class="paper-statistics-grid"></div><p class="paper-rules-note">Dagelijkse limiet gebruikt de lokale tijdzone van deze computer. Bij dagverlies blijven open posities staan. Een drawdownblokkade vereist handmatige hervatting. Correlatie tussen munten wordt niet berekend omdat er geen betrouwbare correlatiemeting is ingebouwd.</p></section>
+
+      <section class="panel paper-positions-panel" aria-label="Open paperposities">
+        <div class="history-head"><div class="panel-title"><span class="title-icon green">◫</span><div><h3>Open paperposities</h3><small id="paper-position-count">0 posities</small></div></div></div>
+        <div class="market-table-scroll"><table class="market-table paper-table"><thead><tr><th>Munt</th><th>Aantal</th><th>Virtuele instap</th><th>Huidige prijs</th><th>Positiewaarde</th><th>Resultaat</th><th>Stop-loss</th><th>Afstand stop</th><th>Geschat verlies</th><th>Take-profit</th><th>Mogelijke winst vóór kosten</th><th>Geschatte winst na kosten</th><th>Risico/rendement</th><th>Prijsupdate</th></tr></thead><tbody id="paper-positions"><tr><td colspan="14" class="table-placeholder">Er zijn nog geen open paperposities.</td></tr></tbody></table></div>
+      </section>
+
+      <div class="paper-two-column">
+        <section class="panel paper-signals-panel" aria-label="Laatste paperhandelsignalen"><div class="history-head"><div class="panel-title"><span class="title-icon violet">✳</span><div><h3>Laatste signalen</h3><small>Technische Fase 3-beoordelingen van de paper-watchlist</small></div></div></div><div id="paper-signals" class="paper-list"><span>Nog geen verse signalen.</span></div></section>
+        <section class="panel paper-recent-trades-panel" aria-label="Laatste papertransacties"><div class="history-head"><div class="panel-title"><span class="title-icon blue">◷</span><div><h3>Laatste virtuele transacties</h3><small>Geen echte orders</small></div></div></div><div id="paper-recent-trades" class="paper-list"><span>Nog geen virtuele transacties.</span></div></section>
+      </div>
+
+      <section class="panel paper-chart-panel"><div class="history-head"><div class="panel-title"><span class="title-icon blue">⌁</span><div><h3>Portefeuille door de tijd</h3><small>Waarde in euro van de virtuele oefenrekening</small></div></div></div><svg id="paper-equity-chart" class="paper-equity-chart" viewBox="0 0 900 230" role="img" aria-label="Grafiek van de virtuele portefeuillewaarde"><g id="paper-equity-labels"></g><path id="paper-equity-line" d=""></path></svg></section>
+
+      <section class="panel paper-statistics-panel"><div class="history-head"><div class="panel-title"><span class="title-icon violet">▦</span><div><h3>Paperhandelsstatistieken</h3><small>Alleen afgesloten virtuele posities tellen als winst of verlies</small></div></div></div><div id="paper-statistics" class="paper-statistics-grid"></div></section>
+
+      <section class="panel paper-history-panel" aria-label="Risicogeschiedenis"><div class="history-head"><div class="panel-title"><span class="title-icon violet">◷</span><div><h3>Risicogeschiedenis</h3><small>Lokale vastlegging van controles, blokkades en gebruikte instellingen</small></div></div><span id="paper-risk-count" class="history-count">0 controles</span></div><div class="market-table-scroll"><table class="market-table paper-table"><thead><tr><th>Datum/tijd</th><th>Munt</th><th>Uitkomst</th><th>Reden</th><th>Gecontroleerde regels</th></tr></thead><tbody id="paper-risk-history"><tr><td colspan="5" class="table-placeholder">Nog geen risicocontroles.</td></tr></tbody></table></div></section>
+
+      <section class="panel paper-history-panel" id="paper-history"><div class="history-head"><div class="panel-title"><span class="title-icon blue">◷</span><div><h3>Volledige paperhandelsgeschiedenis</h3><small>Permanent lokaal bewaard in deze browser op deze computer</small></div></div><span id="paper-trade-count" class="history-count">0 transacties</span></div>
+        <div class="paper-history-filters"><label>Munt<select id="paper-filter-symbol"><option value="">Alle munten</option></select></label><label>Vanaf<input id="paper-filter-from" type="date"></label><label>Tot en met<input id="paper-filter-to" type="date"></label><label>Transactie<select id="paper-filter-side"><option value="">Koop en verkoop</option><option value="KOOP">Koop</option><option value="VERKOOP">Verkoop</option></select></label><label>Resultaat<select id="paper-filter-result"><option value="">Winst en verlies</option><option value="win">Winst</option><option value="loss">Verlies</option></select></label><label>Reden<input id="paper-filter-reason" type="search" placeholder="Zoek in signaal of sluitreden"></label></div>
+        <div class="market-table-scroll"><table class="market-table paper-table"><thead><tr><th>Datum/tijd</th><th>Munt</th><th>Koop/verkoop</th><th>Prijs</th><th>Hoeveelheid</th><th>Virtuele kosten</th><th>Slippage</th><th>Resultaat</th><th>Reden/signaal</th><th>Stop/take-profit</th><th>AI-analyse</th></tr></thead><tbody id="paper-history-rows"><tr><td colspan="11" class="table-placeholder">Nog geen virtuele transactiehistorie.</td></tr></tbody></table></div>
+        <div class="paper-history-footer"><span id="paper-history-page">Pagina 1</span><button id="paper-history-prev" type="button">Vorige</button><button id="paper-history-next" type="button">Volgende</button></div>
+      </section>
+
+      <section class="section-heading" id="signaal"><div><div class="eyebrow">FASE 3 · SIGNAALSCANNER</div><h2>Technische signalen voor meerdere munten</h2></div><span class="sample-label analysis-label">ANALYSE · GEEN VOORSPELLING</span></section>
+      <section class="panel signal-scan-panel" aria-label="Signaalscanner voor meerdere munten">
+        <p class="signal-intro">Dit zijn voorlopige beoordelingen op basis van vaste technische regels. De percentages tonen hoe sterk factoren overeenkomen, niet de kans op winst. Er worden alleen gegevens opgehaald wanneer je een scan start.</p>
+        <div class="scanner-toolbar"><div><button id="scan-selected" type="button" class="scan-button">Scan geselecteerde munten</button><button id="scan-watchlist" type="button" class="scan-button secondary">Scan watchlist</button><span id="scan-status" role="status">Nog geen scan uitgevoerd.</span></div><span class="scanner-safety">Alleen openbare leesgegevens · geen orders</span></div>
+        <div class="market-table-scroll signal-table-scroll"><table class="market-table signal-table"><thead><tr><th>Munt</th><th>Beoordeling</th><th>Overeenstemming</th><th>Score</th><th>Trend</th><th>RSI</th><th>MACD</th><th>Analyse-tijd</th></tr></thead><tbody id="signal-rows"><tr><td colspan="8" class="table-placeholder">Selecteer munten in het marktoverzicht en start een scan. Geen voorbeeldsignalen.</td></tr></tbody></table></div>
+        <div class="interesting-signals"><strong>Interessante signalen</strong><span>Meerdere factoren wijzen dezelfde kant op; geen ranglijst van winnaars.</span><div id="interesting-list" class="interesting-list">Na een scan verschijnen hier de duidelijkste, voldoende onderbouwde signalen.</div></div>
+      </section>
+
+      <section class="section-heading" id="ai-analyse"><div><div class="eyebrow">FASE 4 · AI-AANSLUITING</div><h2>AI-analyse</h2></div><span class="sample-label analysis-label">NOG NIET INGESTELD</span></section>
+      <section class="panel ai-connection-panel" aria-label="Veilige voorbereiding voor AI-analyse">
+        <div class="ai-connection-copy"><span class="title-icon violet">✳</span><div><strong>Veilige lokale verbinding voorbereid</strong><p id="ai-connection-status" role="status">Controle van de lokale aansluiting…</p></div></div>
+        <div class="ai-boundary"><strong>Er wordt nog geen AI-dienst aangeroepen.</strong><span>Er is nog geen AI-dienst gekozen of geheime sleutel ingesteld. Daarom toont dit scherm geen gegenereerde AI-analyse en wordt er geen AI-antwoord verzonnen.</span></div>
+        <button id="ai-analysis-button" class="scan-button" type="button" disabled>AI-analyse uitvoeren</button>
+        <div class="ai-output" aria-live="polite"><strong id="ai-output-title">AI-resultaat verschijnt pas na veilige instelling van een AI-dienst</strong><span id="ai-output-body">De lokale aansluiting is voorbereid om later alleen de geselecteerde munt, actuele prijs, historische candles en technische analysegegevens door te geven. Een geheime sleutel komt niet in deze webpagina.</span></div>
+        <small class="ai-disclaimer">AI-beoordelingen zijn analyses, geen garanties of winstkansen. Er worden geen orders uitgevoerd.</small>
+      </section>
+
+      <section class="section-heading" id="backtesting"><div><div class="eyebrow">FASE 5 · ALLEEN HISTORISCHE SIMULATIE</div><h2>Backtesting</h2></div><span class="sample-label analysis-label">VIRTUEEL GELD · GEEN ORDERS</span></section>
+      <section class="panel backtest-panel" aria-label="Strategie testen met historische gegevens">
+        <p class="backtest-intro">Bekijk hoe de bestaande technische signalen zich in een gekozen historische periode zouden hebben ontwikkeld. Dit is een simulatie; de uitkomst zegt niet wat er in de toekomst zal gebeuren.</p>
+        <div class="backtest-form-grid">
+          <label class="backtest-field backtest-symbol-field">Munt(en)<input id="backtest-symbol-search" type="search" placeholder="Zoek bijvoorbeeld BTC of SOL" autocomplete="off"><select id="backtest-symbols" multiple size="6" aria-label="Selecteer een of meer munten"><option value="">Markten worden geladen…</option></select><small>Maximaal 20 munten per test. Gebruik Ctrl+klik voor meerdere munten of vul de selectie met je watchlist.</small><div class="backtest-selection-buttons"><button type="button" id="backtest-use-watchlist">Gebruik watchlist</button><button type="button" id="backtest-use-selected">Gebruik markselectie</button></div></label>
+          <label class="backtest-field">Van<input id="backtest-start-date" type="date" required></label>
+          <label class="backtest-field">Tot en met<input id="backtest-end-date" type="date" required></label>
+          <label class="backtest-field">Tijdsframe<select id="backtest-interval"><option value="15m">15 minuten</option><option value="1h" selected>1 uur</option><option value="4h">4 uur</option><option value="1d">1 dag</option></select></label>
+          <label class="backtest-field">Startkapitaal (€)<input id="backtest-capital" type="number" min="1" max="10000000" step="100" value="10000"></label>
+          <label class="backtest-field">Transactiekosten per koop/verkoop (%)<input id="backtest-fee" type="number" min="0" max="5" step="0.01" value="0.10"><small>Schatting, instelbaar; geen exchange-kostentarief geladen.</small></label>
+          <label class="backtest-field">Slippage per koop/verkoop (%)<input id="backtest-slippage" type="number" min="0" max="5" step="0.01" value="0.05"><small>Gesimuleerde ongunstige prijsafwijking.</small></label>
+          <label class="backtest-field">Maximaal bedrag per positie (€)<input id="backtest-max-position" type="number" min="1" step="50" value="1000"></label>
+          <label class="backtest-field">Stop-loss (%)<input id="backtest-stop" type="number" min="0" max="90" step="0.1" value="5"><small>0 schakelt de stop-loss uit.</small></label>
+          <label class="backtest-field">Doelprijs / take-profit (%)<input id="backtest-target" type="number" min="0" max="500" step="0.1" value="10"><small>0 schakelt het koersdoel uit.</small></label>
+          <label class="backtest-field">Max. gelijktijdige posities<input id="backtest-max-open" type="number" min="1" max="100" step="1" value="3"></label>
+          <label class="backtest-field">Naam van deze test<input id="backtest-test-name" type="text" maxlength="40" value="Test A"></label>
+        </div>
+        <div class="backtest-rules"><strong>Vaste handelsregels van deze simulatie</strong><span>Koop alleen bij KOPEN of MOGELIJK KOPEN uit Fase 3; verkoop bij MOGELIJK VERKOPEN of VERKOPEN. Een signaal wordt pas na het sluiten van de candle berekend en uitgevoerd bij de opening van de volgende candle. Per munt is maximaal één positie tegelijk open. Zonder hefboom of short-posities.</span><span>Stop-loss en take-profit worden intrabar gecontroleerd. Als beide binnen dezelfde candle geraakt worden, telt de stop-loss eerst (voorzichtige aanname). Open posities worden aan het einde van de test virtueel gesloten.</span><span id="backtest-ai-note">AI-backtesting is niet beschikbaar zolang er geen AI-provider is ingesteld. Deze test gebruikt alleen technische Fase 3-signalen.</span></div>
+        <div class="backtest-actions"><button id="backtest-start" class="scan-button" type="button">Start backtest</button><button id="backtest-cancel" class="scan-button secondary" type="button" disabled>Stop backtest</button><span id="backtest-status" role="status">Kies munten, datums en instellingen.</span></div>
+        <div id="backtest-error" class="backtest-error" role="alert" hidden></div>
+        <div id="backtest-progress-wrap" class="backtest-progress-wrap" hidden><div class="backtest-progress-top"><strong id="backtest-progress-label">Backtest wordt voorbereid…</strong><span id="backtest-progress-percent">0%</span></div><progress id="backtest-progress" max="100" value="0">0%</progress></div>
+        <div class="backtest-warning"><strong>Resultaten uit het verleden zijn geen garantie voor toekomstige resultaten.</strong><span>Een backtest is geen bewijs dat een strategie later winstgevend zal zijn. Alles op deze pagina gebruikt uitsluitend virtueel geld.</span></div>
+      </section>
+
+      <section id="backtest-results" class="panel backtest-results-panel" hidden>
+        <div class="backtest-results-head"><div><div class="eyebrow">SIMULATIE-UITKOMST</div><h3 id="backtest-result-title">Resultaat</h3></div><span id="backtest-result-period" class="sample-label history-label"></span></div>
+        <div id="backtest-result-warnings" class="backtest-result-warnings" hidden></div>
+        <div id="backtest-metrics" class="backtest-metrics"></div>
+        <div class="backtest-cost-note" id="backtest-cost-note"></div>
+        <div class="backtest-chart-block"><strong>Verloop van fictief vermogen</strong><svg id="backtest-equity-chart" class="backtest-equity-chart" viewBox="0 0 900 250" role="img" aria-label="Grafiek van het virtuele vermogen"><g id="backtest-equity-labels"></g><path id="backtest-equity-line" d=""></path></svg></div>
+        <div class="backtest-trades-head"><div><strong>Virtuele transacties</strong><span id="backtest-trade-count"></span></div><div class="backtest-trade-pages"><button type="button" id="backtest-trades-prev">Vorige</button><span id="backtest-trades-page">Pagina 1</span><button type="button" id="backtest-trades-next">Volgende</button></div></div>
+        <div class="market-table-scroll"><table class="market-table backtest-trades-table"><thead><tr><th>Instapdatum</th><th>Uitstapdatum</th><th>Munt</th><th>Koop</th><th>Verkoop</th><th>Hoeveelheid</th><th>Resultaat na kosten</th><th>Reden verkoop</th><th>Uitleg</th></tr></thead><tbody id="backtest-trades"></tbody></table></div>
+        <div id="backtest-trade-detail" class="backtest-trade-detail" hidden></div>
+      </section>
+
+      <section class="panel backtest-comparison-panel" aria-label="Eerdere backtests vergelijken">
+        <div class="history-head"><div class="panel-title"><span class="title-icon blue">▤</span><div><h3>Backtests bewaren en vergelijken</h3><small>Resultaten blijven beschikbaar zolang deze pagina open is</small></div></div><span id="backtest-run-count" class="history-count">0 tests</span></div>
+        <div id="backtest-runs" class="backtest-runs"><span>Nog geen backtests uitgevoerd.</span></div>
+        <div class="backtest-compare-controls"><button type="button" id="backtest-compare" class="scan-button secondary" disabled>Vergelijk 2 geselecteerde tests</button><span id="backtest-compare-status">Voer een tweede test uit met andere instellingen om resultaten te vergelijken.</span></div>
+        <div id="backtest-comparison" class="backtest-comparison" hidden></div>
+      </section>
+
+      <section class="section-heading coins-heading" id="markt"><div><div class="eyebrow">MARKTOVERZICHT</div><h2>Munten uit de markt zoeken</h2></div><span class="sample-label live-label"><span></span> DYNAMISCHE USDT-LIJST</span></section>
+      <section class="panel coins-panel" aria-label="Marktoverzicht met meerdere munten">
+        <div class="coins-toolbar"><label class="search-label" for="coin-search">Zoek op munt of handelspaar<input id="coin-search" type="search" placeholder="Bijvoorbeeld SOL of XRP/USDT" autocomplete="off"></label><button id="watchlist-filter" type="button" class="watchlist-button">☆ Alleen watchlist <span id="watchlist-count">0</span></button></div>
+        <div class="selection-summary"><span id="market-count">Markten laden…</span><span><strong id="selected-count">0</strong> munten geselecteerd</span></div>
+        <div class="market-table-scroll"><table class="market-table"><thead><tr><th scope="col">Selecteer</th><th scope="col">Munt / paar</th><th scope="col">Prijs</th><th scope="col">Trend</th><th scope="col">RSI</th><th scope="col">MACD</th><th scope="col">Volume</th><th scope="col">Update</th><th scope="col">Watchlist</th></tr></thead><tbody id="market-rows"><tr><td colspan="9" class="table-placeholder">Openbare markten worden opgehaald…</td></tr></tbody></table></div>
+        <div class="coins-footer"><span id="market-list-message">De lijst wordt opgehaald uit de openbare marktgegevens.</span><button id="load-more-markets" type="button" class="load-more-button" hidden>Meer munten tonen</button></div>
+      </section>
+
+      <section class="section-heading" id="detail-markt"><div><div class="eyebrow">GESELECTEERDE MUNT</div><h2>Details bekijken</h2></div><span class="sample-label live-label"><span></span> PUBLIEKE LIVE DATA</span></section>
+      <section class="panel live-market-panel" aria-label="Actuele marktgegevens">
+        <div class="market-toolbar"><label for="symbol-select">Crypto<select id="symbol-select"><option value="">Markten laden…</option></select></label><button id="refresh-button" class="refresh-button" type="button"><span aria-hidden="true">↻</span> Vernieuwen</button></div>
+        <div id="market-error" class="market-error" role="alert" hidden></div>
+        <div class="live-price-row"><div><div class="live-price-label">Huidige prijs <span class="currency-note">omgerekend naar euro</span></div><div id="current-price" class="live-price">Laden…</div><div id="selected-pair" class="pair-caption">BTC/USDT · publieke marktgegevens</div></div><div class="update-card"><span>Laatste update</span><strong id="last-update">Gegevens worden opgehaald…</strong><span id="data-state" class="data-state"><span></span> Verbinden met gegevensbron</span></div></div>
+        <div class="market-meta"><span>Gegevensbron: Binance openbare marktgegevens</span><span>Alleen-lezen verbinding · geen API-sleutel</span></div>
+      </section>
+
+      <section class="section-heading chart-heading"><div><div class="eyebrow">HISTORISCHE GEGEVENS</div><h2>Koersverloop</h2></div><span class="sample-label history-label">HISTORISCHE DATA · USDT</span></section>
+      <section class="panel chart-panel" aria-label="Historische koersgrafiek">
+        <div class="chart-toolbar"><div><strong id="chart-pair">BTC/USDT</strong><span id="chart-description">Slotprijs · laatste 120 perioden</span></div><div class="interval-buttons" role="group" aria-label="Kies tijdsperiode"><button type="button" data-interval="1m" class="selected">1 min</button><button type="button" data-interval="5m">5 min</button><button type="button" data-interval="15m">15 min</button><button type="button" data-interval="1h">1 uur</button><button type="button" data-interval="4h">4 uur</button><button type="button" data-interval="1d">1 dag</button></div></div>
+        <div id="chart-message" class="chart-message">Historische gegevens worden opgehaald…</div><svg id="price-chart" class="price-chart" viewBox="0 0 760 220" role="img" aria-label="Koers en voortschrijdende gemiddelden in USDT"><g class="chart-grid"><line x1="48" y1="24" x2="748" y2="24"/><line x1="48" y1="76" x2="748" y2="76"/><line x1="48" y1="128" x2="748" y2="128"/><line x1="48" y1="180" x2="748" y2="180"/></g><g id="chart-labels" class="chart-labels"></g><path id="chart-sma200" class="chart-average chart-average-200" d=""/><path id="chart-sma50" class="chart-average chart-average-50" d=""/><path id="chart-sma20" class="chart-average chart-average-20" d=""/><path id="chart-line" class="chart-line" d=""/></svg><div class="chart-legend"><span><i class="legend-price"></i>Slotprijs</span><span><i class="legend-sma20"></i>SMA 20</span><span><i class="legend-sma50"></i>SMA 50</span><span><i class="legend-sma200"></i>SMA 200</span></div>
+        <div class="ohlc-heading"><strong>Laatste historische periode</strong><span id="ohlc-time">—</span></div><div class="ohlc-grid"><div><span>Open</span><strong id="ohlc-open">—</strong></div><div><span>Hoog</span><strong id="ohlc-high">—</strong></div><div><span>Laag</span><strong id="ohlc-low">—</strong></div><div><span>Slot</span><strong id="ohlc-close">—</strong></div><div><span>Volume</span><strong id="ohlc-volume">—</strong></div></div>
+        <div id="history-state" class="history-state">Historische koersgegevens worden geladen.</div>
+      </section>
+
+      <section class="section-heading analysis-heading" id="analyse"><div><div class="eyebrow">TECHNISCHE ANALYSE</div><h2>Wat laten de berekeningen zien?</h2></div><span class="sample-label analysis-label">GEEN KOOP- OF VERKOOPSIGNAAL</span></section>
+      <section class="panel analysis-panel" aria-label="Technische indicatoren">
+        <div class="analysis-toolbar"><div><strong>Bekijk periode</strong><span id="analysis-pair">BTC/USDT</span></div><div class="analysis-timeframes" role="group" aria-label="Kies analyseperiode"><button type="button" data-analysis-interval="15m" class="selected">15 minuten</button><button type="button" data-analysis-interval="1h">1 uur</button><button type="button" data-analysis-interval="4h">4 uur</button><button type="button" data-analysis-interval="1d">1 dag</button></div></div>
+        <div id="analysis-error" class="analysis-error" role="status" hidden></div>
+        <div class="analysis-cards">
+          <article class="analysis-card trend-card"><span class="analysis-card-label">Trend</span><strong id="trend-value">Laden…</strong><span id="trend-note">Gebaseerd op gemiddelden van 20 en 50 perioden</span></article>
+          <article class="analysis-card"><span class="analysis-card-label">RSI (14)</span><strong id="rsi-value">—</strong><span id="rsi-note">Nog geen berekening</span></article>
+          <article class="analysis-card"><span class="analysis-card-label">MACD (12, 26, 9)</span><strong id="macd-state">—</strong><span id="macd-note">MACD-lijn, signaallijn en histogram</span></article>
+          <article class="analysis-card"><span class="analysis-card-label">Volume</span><strong id="volume-state">—</strong><span id="volume-note">Laatste volledig tijdvak vergeleken met 20 eerdere</span></article>
+        </div>
+        <div class="indicator-block"><div class="indicator-block-title"><strong>Voortschrijdende gemiddelden</strong><span>Koerswaarden omgerekend naar euro’s</span></div><div class="average-grid">
+          <div class="average-item"><span>SMA 20</span><strong id="sma20-value">—</strong><small id="sma20-position">—</small></div><div class="average-item"><span>SMA 50</span><strong id="sma50-value">—</strong><small id="sma50-position">—</small></div><div class="average-item"><span>SMA 200</span><strong id="sma200-value">—</strong><small id="sma200-position">—</small></div><div class="average-item"><span>EMA 20</span><strong id="ema20-value">—</strong><small>Exponentieel gemiddelde</small></div><div class="average-item"><span>EMA 50</span><strong id="ema50-value">—</strong><small>Exponentieel gemiddelde</small></div>
+        </div></div>
+        <div class="indicator-block macd-details"><div class="indicator-block-title"><strong>MACD-details</strong><span>Uitgedrukt in euro’s</span></div><div class="macd-grid"><div><span>MACD-lijn</span><strong id="macd-line">—</strong></div><div><span>Signaallijn</span><strong id="macd-signal">—</strong></div><div><span>Histogram</span><strong id="macd-histogram">—</strong></div></div></div>
+        <div id="analysis-state" class="analysis-state">Technische gegevens worden opgehaald…</div>
+        <div class="analysis-disclaimer">Deze berekeningen beschrijven historische koersbewegingen. Ze voorspellen de toekomst niet en geven geen koop- of verkoopadvies.</div>
+      </section>
+
+      <section class="section-heading detail-heading" id="signaal-detail"><div><div class="eyebrow">SIGNAAL EN POSITIE</div><h2>Details</h2></div><span id="detail-signal-badge" class="sample-label">NOG NIET GESCAND</span></section>
+      <section class="details-grid">
+        <article class="panel detail-panel signal-detail-panel"><div class="panel-title"><span class="title-icon violet">✳</span><div><h3>Technische beoordeling</h3><small id="detail-signal-pair">Selecteer een munt en voer een scan uit</small></div></div><strong id="detail-signal-label" class="detail-signal-label">Nog geen actuele beoordeling</strong><div class="metric-row"><span>Factoren in dezelfde richting</span><strong id="detail-signal-alignment">—</strong></div><div class="metric-row"><span>Technische score</span><strong id="detail-signal-score">—</strong></div><div class="metric-row"><span>Analyse bijgewerkt</span><strong id="detail-signal-time">—</strong></div><div id="detail-timeframes" class="timeframe-summary">Tijdsframes verschijnen na de scan.</div><div class="reason-columns"><div><strong>Factoren die bijdragen</strong><ul id="signal-reasons-for"><li>Geen scan uitgevoerd.</li></ul></div><div><strong>Factoren die tegenwerken</strong><ul id="signal-reasons-against"><li>Geen scan uitgevoerd.</li></ul></div></div><div class="explanation"><span>i</span><span><strong>Geen winstkans</strong><br>De overeenstemming is uitsluitend een maat voor de technische factoren. Dit is geen voorspelling, advies of opdracht.</span></div><div class="signal-change-box"><strong>Laatste signaalwijzigingen</strong><div id="signal-changes">Nog geen wijzigingen.</div></div></article>
+        <article class="panel detail-panel" id="positie"><div class="panel-title"><span class="title-icon green">◫</span><div><h3>Oefenpositie</h3><small>Alleen bedoeld voor oefenen met nepgeld</small></div><span class="status-dot">INACTIEF</span></div><div class="position-empty"><div class="empty-illustration" aria-hidden="true"><span>◫</span></div><strong>Er is nog geen positie</strong><span>Er wordt geen geld gebruikt of verplaatst.</span></div><div class="position-footer"><span>Modus</span><strong><span class="mode-dot"></span> Veilige oefenmodus</strong></div></article>
+      </section>
+
+      <section class="panel history-panel" id="historiek"><div class="history-head"><div class="panel-title"><span class="title-icon blue">◷</span><div><h3>Signaalhistoriek</h3><small>Lokale registratie van wijzigingen en factoren</small></div></div><span id="history-count" class="history-count">0 wijzigingen</span></div><div id="signal-history-list" class="signal-history-list">Nog geen signaalwijzigingen. De eerste scan vormt de beginmeting.</div></section>
+      <section class="section-heading" id="exchange"><div><div class="eyebrow">FASE 8 · ACCOUNTGEGEVENS ALLEEN LEZEN</div><h2>Exchange-verbinding</h2></div><span class="exchange-mode-badge">GEEN HANDEL · GEEN GELDVERPLAATSING</span></section>
+      <section class="section-heading" id="testnet"><div><div class="eyebrow">FASE 9 · UITSLUITEND TESTNET</div><h2>Testnet oefenorders</h2></div><span class="exchange-mode-badge">PAPER ≠ TESTNET ≠ LIVE</span></section>
+      <section class="panel exchange-panel testnet-panel" aria-label="Testnet oefenorders">
+        <div class="testnet-banner"><strong>TESTNET ORDER — GEEN ECHT GELD</strong><span id="testnet-mode">Testnet is niet ingesteld. Start de aparte Testnet-sessie om deze functie te gebruiken.</span><span>LIVE is technisch geblokkeerd. AI en technische signalen kunnen nooit orders versturen.</span></div>
+        <form id="testnet-order-form" class="testnet-form">
+          <label>Paar (USDT)<input id="testnet-symbol" value="BTCUSDT" maxlength="24" autocomplete="off" required></label>
+          <label>Actie<select id="testnet-side"><option value="BUY">BUY · kopen</option><option value="SELL" disabled>SELL · nog niet beschikbaar</option></select></label>
+          <label>Hoeveelheid<input id="testnet-quantity" type="number" min="0.00000001" step="any" required></label>
+          <label>Stop-loss (USDT)<input id="testnet-stop" type="number" min="0.00000001" step="any" required></label>
+          <label>Take-profit (USDT)<input id="testnet-target" type="number" min="0.00000001" step="any" required></label>
+          <button id="testnet-prepare" class="scan-button" type="submit" disabled>Bereid Testnet-order voor</button>
+        </form>
+        <div id="testnet-error" class="exchange-error" role="alert" hidden></div>
+        <div id="testnet-confirm-card" class="testnet-confirm" hidden><strong>TESTNET ORDER — GEEN ECHT GELD</strong><div id="testnet-order-summary"></div><p>De order wordt pas na jouw klik verstuurd. Direct daarvoor worden prijs, balans, markt en Fase 7-risicoregels opnieuw gecontroleerd. Een time-out leidt niet tot automatisch opnieuw versturen.</p><button id="testnet-confirm" class="scan-button" type="button">BEVESTIG TESTNET ORDER</button><button id="testnet-cancel" class="scan-button secondary" type="button">Annuleren</button></div>
+        <div class="testnet-history-head"><strong>Testnet-orderhistorie</strong><button id="testnet-refresh" class="scan-button secondary" type="button">Status controleren</button></div>
+        <div id="testnet-orders" class="exchange-data-list">Geen Testnet-orders opgehaald.</div>
+        <div class="exchange-readonly-note"><strong>Beperking en administratie</strong><span>De eerste versie ondersteunt alleen BUY met LIMIT-entry en OTOCO-bescherming via Binance Spot Testnet. Gedeeltelijke fills worden op werkelijk gevuld aantal gevolgd en bescherming blijft “niet bevestigd” tot exchangebevestiging. Verkoop, automatische signalen, opnames en LIVE zijn geblokkeerd.</span><span>Risicocontroles gebruiken de conservatieve ingebouwde Fase 7-basis in USDT; afwijkende Fase 7-profielinstellingen worden niet automatisch overgenomen.</span></div>
+      </section>
+      <section class="panel exchange-panel" aria-label="Exchange accountverbinding">
+        <div class="exchange-topline"><div><strong id="exchange-name">Exchange niet ingesteld</strong><span id="exchange-mode">PAPER TRADING blijft apart actief</span></div><span id="exchange-state" class="exchange-state">VERBINDING NOG NIET INGESTELD</span></div>
+        <p id="exchange-message" role="status">De openbare marktgegevens werken onafhankelijk. Er is geen exchange-account gekozen of verbonden.</p>
+        <div class="exchange-facts"><div><small>Accountverbinding</small><strong id="exchange-connected">Niet verbonden</strong></div><div><small>Rechten in deze app</small><strong>Alleen lezen</strong></div><div><small>Laatste geslaagde controle</small><strong id="exchange-last-success">Nog niet beschikbaar</strong></div><div><small>Orders / transfers / opnames</small><strong>Uitgeschakeld</strong></div></div>
+        <div class="exchange-controls"><button id="exchange-test" type="button" class="scan-button">Test verbinding</button><button id="exchange-account-refresh" type="button" class="scan-button secondary" disabled>Ververs accountgegevens</button><button id="exchange-markets-refresh" type="button" class="scan-button secondary" disabled>Laad beschikbare markten</button><span id="exchange-action-status" role="status">Nog geen accountverbinding.</span></div>
+        <div id="exchange-error" class="exchange-error" role="alert" hidden></div>
+        <div class="exchange-data-columns"><section><h3>Balansen</h3><div id="exchange-balances" class="exchange-data-list">Niet beschikbaar: er is geen verbonden account.</div><small id="exchange-valuation-note">Totaalwaarde in USDT: niet beschikbaar zolang geen echte waardering is opgehaald.</small><h3>Openstaande orders</h3><div id="exchange-open-orders" class="exchange-data-list">Niet beschikbaar zonder accountverbinding.</div></section><section><h3>Beschikbare markten</h3><div id="exchange-market-count" class="exchange-data-list">Markten kunnen worden geladen na het instellen van een provider.</div><small>Het bestaande publieke muntenoverzicht blijft ook werken zonder accountverbinding.</small></section></div>
+        <div class="exchange-readonly-note"><strong>Veiligheidsgrens Fase 8</strong><span>Deze app bevat alleen vaste leesverzoeken. Echte koop- of verkooporders, transfers, stortingen en opnames zijn niet beschikbaar. Gebruik bij een latere configuratie een API-sleutel met alleen leesrechten, zonder trading-, transfer- of withdrawal-rechten.</span><span>Er is nog geen sleutel ingevuld. Sleutels staan niet in het dashboard, projectbestanden of documentatie.</span></div>
+      </section>
+      <footer><span>AI Crypto Trading Assistant</span><span><span class="footer-dot"></span> Live publieke gegevens · alleen-lezen</span></footer>
+    </main>
+  </div>
+</body>
+</html>
