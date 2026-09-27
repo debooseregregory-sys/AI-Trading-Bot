@@ -14,6 +14,7 @@ from urllib.request import Request, urlopen
 from exchange_layer import ExchangeError
 from testnet_trading import BinanceSpotTestnet, TestnetError, TestnetOrderService, create_testnet_service
 import testnet_readonly_check
+import run_local
 from testnet_readonly_check import ReadOnlyTestnetClient
 
 
@@ -549,6 +550,137 @@ class TestnetWorkflowTests(unittest.TestCase):
             server.shutdown(); server.server_close(); thread.join()
             for k,v in old.items():
                 if v is not None: os.environ[k]=v
+
+
+class TestnetPostRequestSecurityTests(unittest.TestCase):
+    class RouteService:
+        def __init__(self):
+            self.calls = []
+            self.state_changes = 0
+
+        def prepare(self, payload):
+            self.calls.append(("prepare", payload))
+            self.state_changes += 1
+            return {"clientOrderId": "codex-mock-prepared"}
+
+        def confirm(self, client_order_id, confirmed):
+            self.calls.append(("confirm", client_order_id, confirmed))
+            self.state_changes += 1
+            return {"status": "NEW"}
+
+        def manual_resume(self, confirmed):
+            self.calls.append(("resume", confirmed))
+            self.state_changes += 1
+
+        def portfolio_summary(self):
+            return {"drawdownLocked": False}
+
+    @classmethod
+    def setUpClass(cls):
+        cls.server = run_local.create_server(0)
+        cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
+        cls.thread.start()
+        cls.origin = f"http://127.0.0.1:{cls.server.server_port}"
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.server.shutdown()
+        cls.server.server_close()
+        cls.thread.join(2)
+
+    def setUp(self):
+        self.service = self.RouteService()
+        self.factory = patch("run_local.create_testnet_service", return_value=self.service)
+        self.factory.start()
+
+    def tearDown(self):
+        self.factory.stop()
+
+    def request(self, route, payload, origin=None, content_type="application/json", extra_headers=()):
+        headers = {}
+        if origin is not None:
+            headers["Origin"] = origin
+        if content_type is not None:
+            headers["Content-Type"] = content_type
+        request = Request(self.origin + route, data=payload, headers=headers, method="POST")
+        for name, value in extra_headers:
+            request.add_header(name, value)
+        try:
+            with urlopen(request) as response:
+                return response.status, json.load(response)
+        except HTTPError as exc:
+            return exc.code, json.loads(exc.read().decode("utf-8"))
+
+    def test_valid_local_origin_and_json_content_type_reach_all_routes(self):
+        routes = (
+            ("/api/testnet/prepare", {"symbol": "BTCUSDT", "side": "BUY"}),
+            ("/api/testnet/confirm", {"clientOrderId": "codex-mock-prepared", "confirmed": True}),
+            ("/api/testnet/resume", {"confirmed": True}),
+        )
+        for route, payload in routes:
+            with self.subTest(route=route):
+                status, _ = self.request(route, json.dumps(payload).encode(), self.origin)
+                self.assertEqual(status, 200)
+        self.assertEqual([call[0] for call in self.service.calls], ["prepare", "confirm", "resume"])
+        self.assertEqual(self.service.state_changes, 3)
+
+    def test_wrong_origin_blocks_prepare_confirm_resume_before_service_or_state_change(self):
+        routes = (
+            ("/api/testnet/prepare", {"symbol": "BTCUSDT", "side": "BUY"}),
+            ("/api/testnet/confirm", {"clientOrderId": "codex-mock-prepared", "confirmed": True}),
+            ("/api/testnet/resume", {"confirmed": True}),
+        )
+        for route, payload in routes:
+            with self.subTest(route=route):
+                status, body = self.request(route, json.dumps(payload).encode(), "https://attacker.example")
+                self.assertEqual(status, 403)
+                self.assertEqual(body["error"], "origin_not_allowed")
+                self.assertEqual(self.service.calls, [])
+                self.assertEqual(self.service.state_changes, 0)
+
+    def test_missing_origin_blocks_testnet_post(self):
+        status, body = self.request("/api/testnet/resume", b'{"confirmed":true}', origin=None)
+        self.assertEqual(status, 403)
+        self.assertEqual(body["error"], "origin_not_allowed")
+        self.assertEqual(self.service.calls, [])
+        self.assertEqual(self.service.state_changes, 0)
+
+    def test_duplicate_origin_headers_are_rejected_as_suspicious(self):
+        status, body = self.request("/api/testnet/resume", b'{"confirmed":true}', self.origin,
+                                    extra_headers=(("origin", "https://attacker.example"),))
+        self.assertEqual(status, 403)
+        self.assertEqual(body["error"], "origin_not_allowed")
+        self.assertEqual(self.service.calls, [])
+        self.assertEqual(self.service.state_changes, 0)
+
+    def test_wrong_content_type_blocks_every_testnet_post_route(self):
+        routes = (
+            ("/api/testnet/prepare", {"symbol": "BTCUSDT", "side": "BUY"}),
+            ("/api/testnet/confirm", {"clientOrderId": "codex-mock-prepared", "confirmed": True}),
+            ("/api/testnet/resume", {"confirmed": True}),
+        )
+        for route, payload in routes:
+            with self.subTest(route=route):
+                status, body = self.request(route, json.dumps(payload).encode(), self.origin, "text/plain")
+                self.assertEqual(status, 415)
+                self.assertEqual(body["error"], "content_type_not_allowed")
+                self.assertEqual(self.service.calls, [])
+                self.assertEqual(self.service.state_changes, 0)
+
+    def test_missing_content_type_is_rejected_before_state_change(self):
+        status, body = self.request("/api/testnet/resume", b'{"confirmed":true}', self.origin,
+                                    content_type=None)
+        self.assertEqual(status, 415)
+        self.assertEqual(body["error"], "content_type_not_allowed")
+        self.assertEqual(self.service.calls, [])
+        self.assertEqual(self.service.state_changes, 0)
+
+    def test_malformed_json_is_rejected_before_service_creation(self):
+        status, body = self.request("/api/testnet/resume", b"not-json", self.origin)
+        self.assertEqual(status, 400)
+        self.assertEqual(body["error"], "invalid_json")
+        self.assertEqual(self.service.calls, [])
+        self.assertEqual(self.service.state_changes, 0)
 
 
 if __name__ == "__main__": unittest.main()

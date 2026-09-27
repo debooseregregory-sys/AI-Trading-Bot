@@ -133,6 +133,10 @@ class LocalAssistantHandler(SimpleHTTPRequestHandler):
     def _valid_host(self) -> bool:
         return self.headers.get("Host", "").lower() == f"{HOST}:{self.server.server_port}"
 
+    def _valid_origin(self) -> bool:
+        origins = self.headers.get_all("Origin", [])
+        return len(origins) == 1 and origins[0] == self._expected_origin()
+
     def _send_json(self, status: int, payload: dict) -> None:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
@@ -181,12 +185,22 @@ class LocalAssistantHandler(SimpleHTTPRequestHandler):
         if not self._valid_host():
             self._send_json(403, {"error": "host_not_allowed"})
             return
-        if self.headers.get("Origin") != self._expected_origin():
-            self._send_json(403, {"error": "origin_not_allowed"})
-            return
         route = urlsplit(self.path).path
         if route.startswith("/api/testnet/"):
+            # Validate every Testnet write route before parsing or dispatching it.
+            # This includes confirmation and drawdown-resume requests.
+            if not self._valid_origin():
+                self._send_json(403, {"error": "origin_not_allowed"})
+                return
+            content_types = self.headers.get_all("Content-Type", [])
+            content_type = content_types[0].split(";", 1)[0].strip().lower() if len(content_types) == 1 else ""
+            if content_type != "application/json":
+                self._send_json(415, {"error": "content_type_not_allowed"})
+                return
             self._testnet_post(route)
+            return
+        if not self._valid_origin():
+            self._send_json(403, {"error": "origin_not_allowed"})
             return
         if route == "/api/exchange/test":
             self._exchange_test()
