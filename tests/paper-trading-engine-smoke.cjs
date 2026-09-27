@@ -2,7 +2,8 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const assert = require('node:assert/strict');
 const source = fs.readFileSync('src/paper-trading.js', 'utf8');
-const sandbox = { structuredClone, Date, Math, Number, Set, Map, Object, Array, Error, Promise };
+const profileJson = fs.readFileSync('src/risk-profiles.js', 'utf8').match(/globalThis\.PHASE7_RISK_PROFILES\s*=\s*(\{.*\})\s*;/s)[1];
+const sandbox = { structuredClone, Date, Math, Number, Set, Map, Object, Array, Error, Promise, PHASE7_RISK_PROFILES: JSON.parse(profileJson) };
 vm.runInNewContext(source, sandbox, { filename: 'src/paper-trading.js' });
 const engine = sandbox.PaperTradingEngine;
 const base = { initialCapitalEur: 10000, symbols: ['BTCUSDT','ETHUSDT'], intervalMinutes: 1,

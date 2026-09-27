@@ -11,6 +11,7 @@
   <script src="src/indicators.js" defer></script>
   <script src="src/signals.js" defer></script>
   <script src="src/backtest.js" defer></script>
+  <script src="src/risk-profiles.js" defer></script>
   <script src="src/paper-trading.js" defer></script>
   <script src="src/ai-bridge.js" defer></script>
   <script src="src/app.js" defer></script>
@@ -22,30 +23,36 @@
         <span class="brand-mark" aria-hidden="true">₿</span>
         <span><strong>AI Crypto</strong><small>Trading Assistant</small></span>
       </a>
-      <div class="nav-label">WERKRUIMTE</div>
-      <a class="nav-item active" href="#overzicht"><span aria-hidden="true">▦</span> Overzicht</a>
-      <a class="nav-item" href="#markt"><span aria-hidden="true">⌁</span> Markt</a>
-      <a class="nav-item" href="#signaal"><span aria-hidden="true">✳</span> Signaalscanner</a>
-      <a class="nav-item" href="#ai-analyse"><span aria-hidden="true">✧</span> AI-analyse</a>
-      <a class="nav-item" href="#backtesting"><span aria-hidden="true">▤</span> Backtesting</a>
-      <a class="nav-item" href="#paper-trading"><span aria-hidden="true">◫</span> Paper trading</a>
-      <a class="nav-item" href="#historiek"><span aria-hidden="true">◷</span> Historiek</a>
-      <a class="nav-item" href="#exchange"><span aria-hidden="true">⇄</span> Exchange</a>
+      <nav class="sidebar-nav" aria-label="Werkruimte">
+        <div class="nav-label">WERKRUIMTE</div>
+        <a class="nav-item active" href="#overzicht"><span aria-hidden="true">▦</span> Overzicht</a>
+        <a class="nav-item" href="#markt"><span aria-hidden="true">⌁</span> Markt</a>
+        <a class="nav-item" href="#signaal"><span aria-hidden="true">✳</span> Signaalscanner</a>
+        <a class="nav-item" href="#ai-analyse"><span aria-hidden="true">✧</span> AI-analyse</a>
+        <a class="nav-item" href="#backtesting"><span aria-hidden="true">▤</span> Backtesting</a>
+        <a class="nav-item" href="#paper-trading"><span aria-hidden="true">◫</span> Paper trading</a>
+        <a class="nav-item" href="#historiek"><span aria-hidden="true">◷</span> Historiek</a>
+        <a class="nav-item" href="#exchange"><span aria-hidden="true">⇄</span> Exchange</a>
+      </nav>
+      <section class="sidebar-license" aria-label="License">
+        <span class="sidebar-license-label">LICENSE</span>
+        <p id="copyright-license"></p>
+      </section>
       <div class="sidebar-bottom"><div class="offline-indicator"><span></span> Alleen-lezen marktdata</div><small>FASE 8 · READ-ONLY EXCHANGE</small></div>
     </aside>
 
     <main id="overzicht" class="main-content">
       <header class="topbar">
         <div><div class="eyebrow">JOUW PERSOONLIJKE DASHBOARD</div><h1>Goedendag</h1></div>
-        <div class="topbar-right"><span class="paper-mode-badge">PAPER TRADING · VIRTUEEL GELD</span><span class="demo-chip"><span></span> Publieke marktgegevens</span><span class="avatar" aria-label="Profiel">A</span></div>
+        <div class="topbar-right"><span id="active-mode-badge" class="paper-mode-badge">MODUS CONTROLEREN…</span><span class="demo-chip"><span></span> Publieke marktgegevens</span><span class="avatar" aria-label="Profiel">A</span></div>
       </header>
 
       <section class="welcome-card" aria-labelledby="phase-title">
-        <div class="welcome-copy"><div class="phase-pill"><span></span> FASE 8 — EXCHANGE ALLEEN LEZEN</div><h2 id="phase-title">AI Crypto Trading Assistant</h2><p>Volg openbare marktgegevens en oefen met blijvend opgeslagen virtuele transacties.</p><div class="safe-mode"><span class="shield" aria-hidden="true">✓</span><span><strong>PAPER TRADING · VIRTUEEL GELD</strong><small>Geen echte orders · Geen geldverplaatsingen · Geen opnames</small></span></div></div>
+        <div class="welcome-copy"><div class="phase-pill"><span></span> FASE 8 — EXCHANGE ALLEEN LEZEN</div><h2 id="phase-title">AI Crypto Trading Assistant</h2><p>Volg openbare marktgegevens en oefen met blijvend opgeslagen virtuele transacties.</p><div class="safe-mode"><span class="shield" aria-hidden="true">✓</span><span><strong>PAPER MODULE · VIRTUEEL GELD</strong><small>Los van TESTNET · Geen LIVE-orders · Geen geldverplaatsingen · Geen opnames</small></span></div></div>
         <div class="orbit-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="coin">₿</div><span class="spark spark-one">✦</span><span class="spark spark-two">✧</span></div>
       </section>
 
-      <section class="section-heading" id="paper-trading"><div><div class="eyebrow">FASE 7 · RISICOBEHEER VOOR PAPER TRADING</div><h2>Paper trading</h2></div><span class="paper-mode-badge">PAPER TRADING · VIRTUEEL GELD</span></section>
+      <section class="section-heading" id="paper-trading"><div><div class="eyebrow">FASE 7 · RISICOBEHEER VOOR PAPER TRADING</div><h2>Paper trading</h2></div><span class="paper-mode-badge">PAPER REKENING · VIRTUEEL GELD</span></section>
       <section class="panel paper-safety-banner" role="note"><strong>Alle bedragen en transacties op deze pagina zijn uitsluitend virtueel.</strong><span>De oefenmodule ontvangt alleen openbare marktkoersen en technische signalen. Hij heeft geen verbinding met handelsorders, wallets, geldtransfers of opnames. Dit blijft volledig gescheiden van eventuele toekomstige echte handel.</span><span id="paper-ai-note">AI-analyse is niet ingesteld. Oefenhandel gebruikt alleen de technische signalen uit Fase 3.</span></section>
       <section class="panel paper-settings-panel" aria-label="Instellingen van de paper-tradingrekening">
         <div class="history-head"><div class="panel-title"><span class="title-icon green">◫</span><div><h3>Oefenrekening en risicoregels</h3><small>De rekening en geschiedenis worden lokaal op deze computer bewaard</small></div></div><span id="paper-status-badge" class="paper-state-badge">NOG NIET INGESTELD</span></div>
@@ -230,7 +237,7 @@
         <div class="testnet-banner"><strong>TESTNET ORDER — GEEN ECHT GELD</strong><span id="testnet-mode">Testnet is niet ingesteld. Start de aparte Testnet-sessie om deze functie te gebruiken.</span><span>LIVE is technisch geblokkeerd. AI en technische signalen kunnen nooit orders versturen.</span></div>
         <form id="testnet-order-form" class="testnet-form">
           <label>Paar (USDT)<input id="testnet-symbol" value="BTCUSDT" maxlength="24" autocomplete="off" required></label>
-          <label>Actie<select id="testnet-side"><option value="BUY">BUY · kopen</option><option value="SELL" disabled>SELL · nog niet beschikbaar</option></select></label>
+          <label>Actie<select id="testnet-side"><option value="BUY">BUY · kopen</option><option value="SELL">SELL · bevestigde positie sluiten</option></select></label>
           <label>Hoeveelheid<input id="testnet-quantity" type="number" min="0.00000001" step="any" required></label>
           <label>Stop-loss (USDT)<input id="testnet-stop" type="number" min="0.00000001" step="any" required></label>
           <label>Take-profit (USDT)<input id="testnet-target" type="number" min="0.00000001" step="any" required></label>
@@ -238,12 +245,14 @@
         </form>
         <div id="testnet-error" class="exchange-error" role="alert" hidden></div>
         <div id="testnet-confirm-card" class="testnet-confirm" hidden><strong>TESTNET ORDER — GEEN ECHT GELD</strong><div id="testnet-order-summary"></div><p>De order wordt pas na jouw klik verstuurd. Direct daarvoor worden prijs, balans, markt en Fase 7-risicoregels opnieuw gecontroleerd. Een time-out leidt niet tot automatisch opnieuw versturen.</p><button id="testnet-confirm" class="scan-button" type="button">BEVESTIG TESTNET ORDER</button><button id="testnet-cancel" class="scan-button secondary" type="button">Annuleren</button></div>
+        <div id="testnet-portfolio" class="exchange-data-list">Testnet-portefeuille nog niet gesynchroniseerd.</div>
+        <button id="testnet-resume-risk" class="scan-button secondary" type="button" hidden>Drawdownblokkade handmatig hervatten</button>
         <div class="testnet-history-head"><strong>Testnet-orderhistorie</strong><button id="testnet-refresh" class="scan-button secondary" type="button">Status controleren</button></div>
         <div id="testnet-orders" class="exchange-data-list">Geen Testnet-orders opgehaald.</div>
-        <div class="exchange-readonly-note"><strong>Beperking en administratie</strong><span>De eerste versie ondersteunt alleen BUY met LIMIT-entry en OTOCO-bescherming via Binance Spot Testnet. Gedeeltelijke fills worden op werkelijk gevuld aantal gevolgd en bescherming blijft “niet bevestigd” tot exchangebevestiging. Verkoop, automatische signalen, opnames en LIVE zijn geblokkeerd.</span><span>Risicocontroles gebruiken de conservatieve ingebouwde Fase 7-basis in USDT; afwijkende Fase 7-profielinstellingen worden niet automatisch overgenomen.</span></div>
+        <div class="exchange-readonly-note"><strong>Testnet-risicoregels</strong><span>Testnet gebruikt de gekozen Fase 7-profielwaarden en aangepaste limieten uit het paper-risicopaneel. Alle limieten worden op de server opnieuw gecontroleerd bij voorbereiding en direct voor verzending. SELL is alleen toegestaan tot de door Testnet-fills bevestigde positiehoeveelheid; er worden geen shortposities geopend.</span><span>Third-token fees waarvan geen historische quoteconversie beschikbaar is en afwijkingen tussen de lokale fill-ledger en exchange-account vereisen eerst reconciliatie.</span></div>
       </section>
       <section class="panel exchange-panel" aria-label="Exchange accountverbinding">
-        <div class="exchange-topline"><div><strong id="exchange-name">Exchange niet ingesteld</strong><span id="exchange-mode">PAPER TRADING blijft apart actief</span></div><span id="exchange-state" class="exchange-state">VERBINDING NOG NIET INGESTELD</span></div>
+        <div class="exchange-topline"><div><strong id="exchange-name">Exchange niet ingesteld</strong><span id="exchange-mode">Modus wordt vastgesteld…</span></div><span id="exchange-state" class="exchange-state">VERBINDING NOG NIET INGESTELD</span></div>
         <p id="exchange-message" role="status">De openbare marktgegevens werken onafhankelijk. Er is geen exchange-account gekozen of verbonden.</p>
         <div class="exchange-facts"><div><small>Accountverbinding</small><strong id="exchange-connected">Niet verbonden</strong></div><div><small>Rechten in deze app</small><strong>Alleen lezen</strong></div><div><small>Laatste geslaagde controle</small><strong id="exchange-last-success">Nog niet beschikbaar</strong></div><div><small>Orders / transfers / opnames</small><strong>Uitgeschakeld</strong></div></div>
         <div class="exchange-controls"><button id="exchange-test" type="button" class="scan-button">Test verbinding</button><button id="exchange-account-refresh" type="button" class="scan-button secondary" disabled>Ververs accountgegevens</button><button id="exchange-markets-refresh" type="button" class="scan-button secondary" disabled>Laad beschikbare markten</button><span id="exchange-action-status" role="status">Nog geen accountverbinding.</span></div>
@@ -252,6 +261,7 @@
         <div class="exchange-readonly-note"><strong>Veiligheidsgrens Fase 8</strong><span>Deze app bevat alleen vaste leesverzoeken. Echte koop- of verkooporders, transfers, stortingen en opnames zijn niet beschikbaar. Gebruik bij een latere configuratie een API-sleutel met alleen leesrechten, zonder trading-, transfer- of withdrawal-rechten.</span><span>Er is nog geen sleutel ingevuld. Sleutels staan niet in het dashboard, projectbestanden of documentatie.</span></div>
       </section>
       <footer><span>AI Crypto Trading Assistant</span><span><span class="footer-dot"></span> Live publieke gegevens · alleen-lezen</span></footer>
+      <section class="about-application" aria-label="Over deze applicatie"><details><summary>Over deze applicatie</summary><p id="about-copyright-license"></p></details></section>
     </main>
   </div>
 </body>

@@ -276,13 +276,18 @@ class LocalAssistantHandler(SimpleHTTPRequestHandler):
     def _testnet_get(self, route):
         try:
             if route == "/api/testnet/status":
-                enabled = __import__("os").environ.get("EXCHANGE_SANDBOX", "").lower() in {"1", "true", "yes"}
+                env = __import__("os").environ
+                sandbox = env.get("EXCHANGE_SANDBOX", "").lower() in {"1", "true", "yes"}
+                enabled = (sandbox and env.get("EXCHANGE_PROVIDER", "").strip().lower() == "binance_spot"
+                           and bool(env.get("EXCHANGE_API_KEY")) and bool(env.get("EXCHANGE_API_SECRET")))
                 self._send_json(200, {"mode": "TESTNET" if enabled else "PAPER", "enabled": enabled,
                     "liveEnabled": False, "withdrawalsEnabled": False,
-                    "message": "Testnet-ordersessie beschikbaar na expliciete testnetstart." if enabled else "Testnet-ordersessie niet ingesteld. Paper trading blijft beschikbaar."})
+                    "message": "TESTNET is de actieve exchange-modus; paper trading blijft een aparte virtuele rekening." if enabled else "PAPER TRADING actief. Er is geen volledige Testnet-sessie met provider en tijdelijke credentials ingesteld."})
                 return
             service = create_testnet_service()
             if route == "/api/testnet/orders": self._send_json(200, {"orders": service.history(), "liveEnabled": False})
+            elif route == "/api/testnet/sync": self._send_json(200, {"portfolio": service.sync(), "orders": service.history(), "liveEnabled": False})
+            elif route == "/api/testnet/portfolio": self._send_json(200, {"portfolio": service.portfolio_summary(), "liveEnabled": False})
             elif route.startswith("/api/testnet/order/"):
                 client_id = route.rsplit("/", 1)[-1]
                 if not re.fullmatch(r"codex[a-f0-9]{28}", client_id): self._send_json(400, {"error": "invalid_id"}); return
@@ -308,6 +313,11 @@ class LocalAssistantHandler(SimpleHTTPRequestHandler):
                 if not isinstance(payload, dict) or set(payload) != {"clientOrderId", "confirmed"}:
                     self._send_json(400, {"error": "invalid_confirmation"}); return
                 self._send_json(200, service.confirm(payload["clientOrderId"], payload["confirmed"]))
+            elif route == "/api/testnet/resume":
+                if not isinstance(payload, dict) or set(payload) != {"confirmed"}:
+                    self._send_json(400, {"error": "invalid_confirmation"}); return
+                service.manual_resume(payload["confirmed"])
+                self._send_json(200, {"portfolio": service.portfolio_summary(), "resumed": True})
             else: self._not_found()
         except TestnetError as exc:
             code = 503 if exc.code in {"not_configured", "mode_blocked", "outcome_unknown"} else 400

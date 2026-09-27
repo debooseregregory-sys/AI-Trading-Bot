@@ -79,7 +79,8 @@ class ExchangeProviderTests(unittest.TestCase):
                     layer.assert_action_blocked(action, mode, user_confirmed=True)
 
     def test_server_status_and_forbidden_order_routes(self):
-        old = {name: os.environ.pop(name, None) for name in ("EXCHANGE_PROVIDER", "EXCHANGE_API_KEY", "EXCHANGE_API_SECRET")}
+        names=("EXCHANGE_PROVIDER", "EXCHANGE_API_KEY", "EXCHANGE_API_SECRET", "EXCHANGE_SANDBOX")
+        old = {name: os.environ.pop(name, None) for name in names}
         server = run_local.create_server(0)
         thread = threading.Thread(target=server.serve_forever, daemon=True); thread.start()
         try:
@@ -89,6 +90,21 @@ class ExchangeProviderTests(unittest.TestCase):
             self.assertFalse(status["connected"])
             self.assertTrue(status["readOnly"])
             self.assertFalse(status["tradingEnabled"])
+            with urlopen(base + "/api/testnet/status") as response:
+                self.assertEqual(json.load(response)["mode"], "PAPER")
+            os.environ.update({"EXCHANGE_PROVIDER":"binance_spot","EXCHANGE_API_KEY":"mock-key",
+                               "EXCHANGE_API_SECRET":"mock-secret","EXCHANGE_SANDBOX":"1"})
+            with urlopen(base + "/api/testnet/status") as response:
+                testnet_status=json.load(response)
+            self.assertTrue(testnet_status["enabled"])
+            self.assertEqual(testnet_status["mode"],"TESTNET")
+            with urlopen(base + "/api/exchange/status") as response:
+                self.assertEqual(json.load(response)["mode"],"TESTNET")
+            # Remove even dummy credentials before testing the connection route;
+            # this suite must remain fully offline.
+            for name in names: os.environ.pop(name, None)
+            for name, value in old.items():
+                if value is not None: os.environ[name] = value
             request = Request(base + "/api/orders", data=b"{}", headers={"Origin": base}, method="POST")
             with self.assertRaises(HTTPError) as caught: urlopen(request)
             self.assertEqual(caught.exception.code, 404)
@@ -110,6 +126,17 @@ class ExchangeProviderTests(unittest.TestCase):
         self.assertNotIn('id="api-secret"', page)
         self.assertNotIn("never-show-this", page)
         with self.assertRaises(layer.ExchangeError): layer.create_provider() if os.environ.get("EXCHANGE_PROVIDER") == "invalid" else layer.assert_action_blocked("create_order")
+
+    def test_dashboard_active_mode_switches_to_testnet_and_never_keeps_paper_header(self):
+        with open("index.html", encoding="utf-8") as f: page = f.read()
+        with open("src/app.js", encoding="utf-8") as f: app = f.read()
+        self.assertIn('id="active-mode-badge"', page)
+        self.assertIn('>MODUS CONTROLEREN…</span>', page)
+        self.assertIn('TESTNET: ["TESTNET · SANDBOX"', app)
+        self.assertIn('"LIVE ACCOUNT": ["LIVE · ALLEEN-LEZEN"', app)
+        self.assertIn('setActiveMode(status.enabled ? "TESTNET"', app)
+        self.assertIn('setActiveMode("UNKNOWN")', app)
+        self.assertIn("PAPER MODULE · VIRTUEEL GELD", page)
 
 
 if __name__ == "__main__":

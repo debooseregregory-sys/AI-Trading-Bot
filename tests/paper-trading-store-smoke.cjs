@@ -18,6 +18,7 @@ class FakeDb {
 }
 const database=new FakeDb();
 const fs=require('node:fs');const vm=require('node:vm');const assert=require('node:assert/strict');
+globalThis.PHASE7_RISK_PROFILES=JSON.parse(fs.readFileSync('src/risk-profiles.js','utf8').match(/globalThis\.PHASE7_RISK_PROFILES\s*=\s*(\{.*\})\s*;/s)[1]);
 vm.runInThisContext(fs.readFileSync('src/paper-trading.js','utf8'),{filename:'src/paper-trading.js'});
 const indexedDb={open(){const request={};setTimeout(()=>{if(!database.stores.has('account')){request.result=database;request.onupgradeneeded?.();}else request.result=database;request.onsuccess?.();},0);return request;}};
 (async()=>{

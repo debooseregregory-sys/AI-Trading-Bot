@@ -2,7 +2,8 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const assert = require('node:assert/strict');
 const source = fs.readFileSync('src/paper-trading.js', 'utf8');
-const sandbox = { structuredClone, Date, Math, Number, Set, Map, Object, Array, Error, Promise };
+const profileJson = fs.readFileSync('src/risk-profiles.js', 'utf8').match(/globalThis\.PHASE7_RISK_PROFILES\s*=\s*(\{.*\})\s*;/s)[1];
+const sandbox = { structuredClone, Date, Math, Number, Set, Map, Object, Array, Error, Promise, PHASE7_RISK_PROFILES: JSON.parse(profileJson) };
 vm.runInNewContext(source, sandbox, { filename: 'src/paper-trading.js' });
 const engine = sandbox.PaperTradingEngine;
 const base = { initialCapitalEur: 10000, symbols: ['BTCUSDT','ETHUSDT'], intervalMinutes: 1,
@@ -75,6 +76,47 @@ assert.equal(account.peakEquityEur, engine.portfolio(account).totalEur);
 account.dailyLossLocked = true;
 account = engine.resumeRiskLock(account, now + 2);
 assert.equal(account.dailyLossLocked, true, 'manual drawdown resume must not bypass an active daily loss limit');
+
+// Unfilled BUY orders are separate from positions but reserve Phase 7 risk,
+// per-symbol size, portfolio exposure, cash and concurrent-position capacity.
+now += 60000;
+const reservedLimits = { ...base, riskPerTradePercent: 1, maxTotalRiskPercent: 1,
+  maxPositionPercent: 20, maxExposurePercent: 30, maxOpenPositions: 3 };
+account = engine.createAccount(reservedLimits, now);
+const item = market('ETHUSDT', 100, now);
+const withoutReservations = engine.checkRisk(account, item, now);
+account.reservedOrders = [{ symbol: 'BTCUSDT', quantity: 5, priceEur: 100, stopLossEur: 90, feePercent: .1 }];
+const oneOpenBuy = engine.checkRisk(account, item, now);
+assert.ok(oneOpenBuy.quantity < withoutReservations.quantity, 'a single open BUY reserves aggregate risk and portfolio exposure');
+assert.equal(oneOpenBuy.checks.find(check => check.rule === 'bekende open-orderreserveringen').passed, true);
+assert.equal(account.positions.length, 0, 'unfilled BUY reservations are not reported as filled positions');
+
+now += 60000;
+account = engine.createAccount({ ...reservedLimits, maxTotalRiskPercent: 3, maxExposurePercent: 100,
+  maxPositionPercent: 100, maxPositionEur: 10000, maxOpenPositions: 12 }, now);
+account.reservedOrders = Array.from({ length: 7 }, (_, index) => ({
+  symbol: `X${index}USDT`, quantity: 9, priceEur: 100, stopLossEur: 95, feePercent: .1,
+}));
+const manyOpenBuys = engine.checkRisk(account, market('NEWUSDT', 100, now), now);
+assert.equal(manyOpenBuys.allowed, false, 'aggregate risk reserved by several open BUY orders blocks another entry');
+assert.ok(manyOpenBuys.checks.some(check => check.rule === 'gezamenlijk risico' && !check.passed));
+
+// Filled positions and the unfilled remainder are both counted after a partial fill.
+now += 60000;
+account = engine.createAccount({ ...reservedLimits, maxTotalRiskPercent: 1, maxPositionPercent: 100,
+  maxPositionEur: 10000, maxExposurePercent: 100 }, now);
+account.positions = [{ symbol: 'BTCUSDT', quantity: 4, lastPriceEur: 100, entryPriceEur: 100,
+  stopLossEur: 0, takeProfitEur: 0 }];
+account.reservedOrders = [{ symbol: 'BTCUSDT', quantity: 5, priceEur: 100, stopLossEur: 90, feePercent: .1 }];
+const filledPlusReserved = engine.checkRisk(account, market('ETHUSDT', 100, now), now);
+assert.equal(filledPlusReserved.allowed, false, 'the filled position and remaining open BUY share aggregate risk and position capacity');
+
+// Missing or malformed open-order risk inputs fail closed.
+account = engine.createAccount(reservedLimits, now);
+account.reservedOrders = [{ symbol: 'BTCUSDT', quantity: 1, priceEur: 100, stopLossEur: null }];
+const unknownReservation = engine.checkRisk(account, market('ETHUSDT', 100, now), now);
+assert.equal(unknownReservation.allowed, false);
+assert.equal(unknownReservation.checks.find(check => check.rule === 'bekende open-orderreserveringen').passed, false);
 
 // Profile defaults are concrete, and the isolated engine has no order/exchange APIs.
 assert.deepEqual(Object.keys(engine.PROFILE_DEFAULTS).sort(), ['aggressive','balanced','cautious']);

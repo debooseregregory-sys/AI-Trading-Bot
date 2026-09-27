@@ -10,11 +10,9 @@
   const VALID_LABELS = new Set([...BUY_LABELS, "GEEN ACTIE", ...SELL_LABELS]);
   const LIMITS = Object.freeze({ maxSymbols: 20, maxTrades: 1_000_000, maxEquityPoints: 20_000 });
 
-  const PROFILE_DEFAULTS = Object.freeze({
-    cautious: Object.freeze({ riskPerTradePercent: 0.5, maxPositionEur: 500, maxPositionPercent: 5, maxOpenPositions: 2, maxExposurePercent: 25, maxTotalRiskPercent: 1.5, dailyLossLimitPercent: 2, maxDrawdownPercent: 10, minRiskReward: 1.5, stopLossPercent: 4, takeProfitPercent: 8 }),
-    balanced: Object.freeze({ riskPerTradePercent: 1, maxPositionEur: 1000, maxPositionPercent: 10, maxOpenPositions: 3, maxExposurePercent: 50, maxTotalRiskPercent: 3, dailyLossLimitPercent: 3, maxDrawdownPercent: 15, minRiskReward: 1.5, stopLossPercent: 5, takeProfitPercent: 10 }),
-    aggressive: Object.freeze({ riskPerTradePercent: 2, maxPositionEur: 2000, maxPositionPercent: 20, maxOpenPositions: 5, maxExposurePercent: 75, maxTotalRiskPercent: 6, dailyLossLimitPercent: 5, maxDrawdownPercent: 25, minRiskReward: 1, stopLossPercent: 7, takeProfitPercent: 14 }),
-  });
+  const embeddedProfiles = typeof document !== "undefined"
+    ? JSON.parse(document.getElementById("phase7-risk-profiles")?.textContent || "{}") : {};
+  const PROFILE_DEFAULTS = Object.freeze(globalThis.PHASE7_RISK_PROFILES || embeddedProfiles);
 
   function validateSettings(settings) {
     if (!Number.isFinite(settings.initialCapitalEur) || settings.initialCapitalEur < 100 || settings.initialCapitalEur > 10_000_000) throw new Error("Kies een virtueel startkapitaal tussen €100 en €10.000.000.");
@@ -108,10 +106,36 @@
     const rewardPerUnit = target - entry - (target + entry) * (account.feePercent + account.slippagePercent) / 100;
     const riskBudget = equity * account.riskPerTradePercent / 100;
     const maxPos = Math.min(account.maxPositionEur, equity * account.maxPositionPercent / 100);
-    const positionCapQuantity = maxPos / entry;
+    const reservedOrders = account.reservedOrders ?? [];
+    const reservationsValid = Array.isArray(reservedOrders) && reservedOrders.length <= 100
+      && reservedOrders.every((order) => order && typeof order.symbol === "string"
+        && Number.isFinite(order.quantity) && order.quantity > 0
+        && Number.isFinite(order.priceEur) && order.priceEur > 0
+        && Number.isFinite(order.stopLossEur) && order.stopLossEur > 0 && order.stopLossEur < order.priceEur
+        && (order.feePercent == null || (Number.isFinite(order.feePercent) && order.feePercent >= 0 && order.feePercent <= 10)));
+    const validReservations = reservationsValid ? reservedOrders : [];
+    const reservedExposure = validReservations.reduce((sum, order) => sum + order.quantity * order.priceEur, 0);
+    const reservedRisk = validReservations.reduce((sum, order) => {
+      const fees = Math.max(account.feePercent, order.feePercent ?? 0);
+      const unitRisk = order.priceEur - order.stopLossEur
+        + (order.priceEur + order.stopLossEur) * (fees + account.slippagePercent) / 100;
+      return sum + order.quantity * unitRisk;
+    }, 0);
+    const reservedForSymbol = validReservations.filter((order) => order.symbol === item.symbol)
+      .reduce((sum, order) => sum + order.quantity * order.priceEur, 0);
+    const openForSymbol = account.positions.filter((position) => position.symbol === item.symbol)
+      .reduce((sum, position) => sum + position.quantity * position.lastPriceEur, 0);
+    const existingExposure = account.positions.reduce((sum, position) => sum + position.quantity * position.lastPriceEur, 0);
+    const occupiedSymbols = new Set(account.positions.map((position) => position.symbol));
+    for (const order of validReservations) occupiedSymbols.add(order.symbol);
+    const resultingPositionCount = occupiedSymbols.size + (occupiedSymbols.has(item.symbol) ? 0 : 1);
+    const reservedLocalCash = validReservations.reduce((sum, order) =>
+      sum + order.quantity * order.priceEur * (1 + Math.max(account.feePercent, order.feePercent ?? 0) / 100), 0);
+    const positionCapQuantity = Math.max(0, maxPos - reservedForSymbol - openForSymbol) / entry;
     const quantity = Math.min(riskBudget / riskPerUnit, positionCapQuantity,
-      Math.max(0, equity * account.maxExposurePercent / 100 - account.positions.reduce((sum, p) => sum + p.quantity * p.lastPriceEur, 0)) / entry,
-      account.cashEur / (entry * (1 + account.feePercent / 100)));
+      Math.max(0, equity * account.maxExposurePercent / 100 - existingExposure - reservedExposure) / entry,
+      Math.max(0, equity * account.maxTotalRiskPercent / 100 - totalOpenRisk(account) - reservedRisk) / riskPerUnit,
+      Math.max(0, account.cashEur - reservedLocalCash) / (entry * (1 + account.feePercent / 100)));
     const plannedRiskEur = quantity * riskPerUnit;
     const plannedRewardEur = quantity * rewardPerUnit;
     const rr = plannedRiskEur > 0 ? plannedRewardEur / plannedRiskEur : NaN;
@@ -121,8 +145,10 @@
       { rule: "risico per transactie", passed: plannedRiskEur > 0 && plannedRiskEur <= riskBudget + 1e-8 },
       { rule: "maximale positieomvang", passed: quantity * entry <= maxPos + 1e-8 },
       { rule: "maximaal aantal posities", passed: account.positions.length < account.maxOpenPositions },
-      { rule: "totale blootstelling", passed: quantity > 0 },
-      { rule: "gezamenlijk risico", passed: totalOpenRisk(account) + plannedRiskEur <= equity * account.maxTotalRiskPercent / 100 + 1e-8 },
+      { rule: "bekende open-orderreserveringen", passed: reservationsValid },
+      { rule: "maximaal aantal posities inclusief gereserveerde orders", passed: resultingPositionCount <= account.maxOpenPositions },
+      { rule: "totale blootstelling", passed: quantity > 0 && existingExposure + reservedExposure + quantity * entry <= equity * account.maxExposurePercent / 100 + 1e-8 },
+      { rule: "gezamenlijk risico", passed: totalOpenRisk(account) + reservedRisk + plannedRiskEur <= equity * account.maxTotalRiskPercent / 100 + 1e-8 },
       { rule: "dagelijkse verlieslimiet", passed: !account.dailyLossLocked && dailyPnl > -dailyLimitEur },
       { rule: "maximale drawdown", passed: !account.riskLock && drawdown < account.maxDrawdownLimitPercent },
       { rule: "voldoende virtuele cash", passed: quantity > 0 && quantity * entry * (1 + account.feePercent / 100) <= account.cashEur + 1e-8 },

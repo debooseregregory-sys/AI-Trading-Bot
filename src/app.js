@@ -3,12 +3,15 @@
 "use strict";
 
 const MARKET_DATA_ROOT = "https://data-api.binance.vision/api/v3";
+const COPYRIGHT_LICENSE_TEXT = "© 2026 Andy B.\nDeveloped by Andy B.\nLicensed to\nChantal Verpoort";
 const REFRESH_INTERVAL_MS = 60_000;
 const HISTORY_LIMIT = 500;
 const INTERVALS = new Set(["1m", "5m", "15m", "1h", "4h", "1d"]);
 const ANALYSIS_INTERVALS = new Set(["15m", "1h", "4h", "1d"]);
 const SYMBOLS = new Map();
 const byId = (id) => document.getElementById(id);
+byId("about-copyright-license").textContent = COPYRIGHT_LICENSE_TEXT;
+byId("copyright-license").textContent = COPYRIGHT_LICENSE_TEXT;
 const WATCHLIST_KEY = "aiCryptoAssistant.watchlist.v1";
 const MARKETS_PER_PAGE = 12;
 const OVERVIEW_CACHE_MS = 5 * 60_000;
@@ -1606,6 +1609,20 @@ function renderExchangeOrders(orders) {
   }
 }
 
+function setActiveMode(mode) {
+  const badge = document.getElementById("active-mode-badge");
+  const labels = {
+    TESTNET: ["TESTNET · SANDBOX", "TESTNET actief · de paperrekening blijft apart"],
+    LIVE: ["LIVE · ALLEEN-LEZEN", "LIVE account · alleen-lezen; geen LIVE-orders"],
+    "LIVE ACCOUNT": ["LIVE · ALLEEN-LEZEN", "LIVE account · alleen-lezen; geen LIVE-orders"],
+    PAPER: ["PAPER TRADING · VIRTUEEL GELD", "PAPER TRADING · virtueel"],
+    UNKNOWN: ["MODUS ONBEKEND · FAIL-CLOSED", "Actieve modus kon niet worden bevestigd; acties zijn geblokkeerd"],
+  };
+  const [badgeText, detailText] = labels[mode] || labels.PAPER;
+  if (badge) badge.textContent = badgeText;
+  exchangeText("exchange-mode", detailText);
+}
+
 async function loadExchangeAccount() {
   const [account, openOrders] = await Promise.all([
     exchangeRequest("/api/exchange/account"), exchangeRequest("/api/exchange/open-orders"),
@@ -1621,6 +1638,7 @@ async function initializeExchangePanel() {
     const status = await exchangeRequest("/api/exchange/status");
     exchangeText("exchange-name", status.exchange || "Exchange niet ingesteld");
     exchangeText("exchange-mode", status.mode === "TESTNET" ? "TESTNET · oefenaccount" : status.mode === "LIVE ACCOUNT" ? "LIVE ACCOUNT · alleen-lezen" : "PAPER TRADING · virtueel en apart");
+    setActiveMode(status.configured ? status.mode : "PAPER");
     exchangeText("exchange-state", status.connected ? "VERBONDEN · ALLEEN LEZEN" : status.partial ? "CONFIGURATIE ONVOLLEDIG" : status.state === "not_tested" ? "INGESTELD · NOG NIET GETEST" : "VERBINDING NOG NIET INGESTELD");
     exchangeText("exchange-connected", status.connected ? "Verbonden" : "Niet verbonden");
     exchangeText("exchange-message", status.message || "Geen verbinding ingesteld.");
@@ -1630,6 +1648,7 @@ async function initializeExchangePanel() {
       if (button) button.disabled = !status.configured;
     }
   } catch {
+    setActiveMode("UNKNOWN");
     exchangeText("exchange-message", "De status van de accountverbinding kon niet worden opgehaald. Marktgegevens en paper trading blijven werken.");
   }
 
@@ -1677,19 +1696,77 @@ async function initializeExchangePanel() {
 void initializeExchangePanel();
 
 let preparedTestnetOrder = null;
+function testnetPhase7RiskSettings() {
+  const account = paperAccount || {};
+  return {
+    profile: account.riskProfile || document.getElementById("paper-risk-profile")?.value || "balanced",
+    riskPerTradePercent: account.riskPerTradePercent ?? Number(document.getElementById("paper-risk-trade")?.value ?? 1),
+    maxPositionEur: account.maxPositionEur ?? Number(document.getElementById("paper-max-position")?.value ?? 1000),
+    maxPositionPercent: account.maxPositionPercent ?? Number(document.getElementById("paper-max-position-percent")?.value ?? 10),
+    maxOpenPositions: account.maxOpenPositions ?? Number(document.getElementById("paper-max-open")?.value ?? 3),
+    maxExposurePercent: account.maxExposurePercent ?? Number(document.getElementById("paper-max-exposure")?.value ?? 50),
+    maxTotalRiskPercent: account.maxTotalRiskPercent ?? Number(document.getElementById("paper-risk-total")?.value ?? 3),
+    dailyLossLimitPercent: account.dailyLossLimitPercent ?? Number(document.getElementById("paper-daily-loss")?.value ?? 3),
+    maxDrawdownPercent: account.maxDrawdownLimitPercent ?? Number(document.getElementById("paper-max-drawdown")?.value ?? 15),
+    minRiskReward: account.minRiskReward ?? Number(document.getElementById("paper-min-rr")?.value ?? 1.5),
+  };
+}
 async function loadTestnetPanel() {
   const status = await exchangeRequest("/api/testnet/status");
+  const accountStatus = status.enabled ? null : await exchangeRequest("/api/exchange/status").catch(() => null);
+  setActiveMode(status.enabled ? "TESTNET" : accountStatus ? accountStatus.configured ? accountStatus.mode : "PAPER" : "UNKNOWN");
   exchangeText("testnet-mode", status.message);
   document.getElementById("testnet-prepare").disabled = !status.enabled;
-  const result = await exchangeRequest("/api/testnet/orders").catch(() => ({orders: []}));
+  const result = status.enabled
+    ? await exchangeRequest("/api/testnet/sync")
+    : await exchangeRequest("/api/testnet/orders").catch(() => ({orders: []}));
+  renderTestnetPortfolio(result.portfolio);
   const root = document.getElementById("testnet-orders"); root.replaceChildren();
   if (!result.orders.length) { root.textContent = "Nog geen Testnet-orders geregistreerd."; return; }
   for (const order of result.orders) {
     const row = document.createElement("div"); row.className = "exchange-data-row";
     const title = document.createElement("strong"); title.textContent = `${order.symbol} · ${order.status}`;
-    const detail = document.createElement("span"); detail.textContent = `Gevuld: ${order.executedQty ?? "onbekend"} · Gem. instap: ${order.averageEntry ?? "onbekend"} · Bescherming: ${order.protection || "niet bevestigd"} · ${order.clientOrderId} · ${formatLocalTime(order.createdAt)}`;
+    const fees = Array.isArray(order.fees) && order.fees.length
+      ? order.fees.map(fee => fee.amount == null ? "commissie onbekend" : `${fee.amount} ${fee.asset || ""}`).join(", ")
+      : "fee nog niet door exchange bevestigd";
+    const detail = document.createElement("span"); detail.textContent = `Werkelijk gevuld: ${order.executedQty ?? "onbekend"} · Gem. fillprijs: ${order.averageEntry ?? "onbekend"} · Fees: ${fees} · Bescherming: ${order.protection || "niet bevestigd"} · ${order.clientOrderId} · ${formatLocalTime(order.createdAt)}`;
     row.append(title, detail); root.append(row);
   }
+}
+function renderTestnetPortfolio(portfolio) {
+  const root = document.getElementById("testnet-portfolio");
+  if (!root) return;
+  root.replaceChildren();
+  if (!portfolio) { root.textContent = "Testnet-portefeuille nog niet gesynchroniseerd."; return; }
+  const values = [
+    ["Modus", "TESTNET"], ["Equity (USDT)", portfolio.equityUSDT],
+    ["Gerealiseerde P/L (USDT)", portfolio.realizedPnlUSDT], ["Ongerealiseerde P/L (USDT)", portfolio.unrealizedPnlUSDT],
+    ["Open risico (USDT)", portfolio.openRiskUSDT], ["Dagresultaat sinds eerste lokale sync (indicatief, USDT)", portfolio.dailyPnlUSDT],
+    ["Dagresultaatstatus", portfolio.dailyPnlStatus === "UNAVAILABLE_RECONCILIATION" ? "Niet beschikbaar · reconciliatie vereist" : "Indicatief · geen historische dagopeningsbalans"],
+    ["Portfolio peak (USDT)", portfolio.portfolioPeakUSDT], ["Drawdown", `${Number(portfolio.drawdownPercent || 0).toFixed(2)}%`],
+    ["Risicoblokkade", portfolio.dailyLossLocked ? "Dagverlieslimiet bereikt" : portfolio.drawdownLocked ? "Drawdown · hervatten vereist" : "Geen"],
+    ["Accountreconciliatie", portfolio.reconciliationRequired ? "VEREIST · orders geblokkeerd" : "Gesynchroniseerd"],
+    ["Reconciliatiereden", portfolio.reconciliationReasons?.join(" · ") || "Geen"],
+    ["Gereserveerde open BUY-orders", (portfolio.reservedBuyOrders || []).map(order => `${order.symbol} ${order.quantity} @ ${order.price} USDT (niet gevuld)`).join(" · ") || "Geen"],
+    ["Onbekende open exchange-orders", portfolio.untrackedOpenOrders?.length || 0],
+    ["Onbekende open order-lists", portfolio.untrackedOrderLists?.length || 0],
+    ["Niet-geboekte accountactiva", portfolio.untrackedAssets?.map(item => `${item.quantity} ${item.asset}`).join(", ") || "Geen"],
+    ["Fees per asset", Object.entries(portfolio.feesByAsset || {}).map(([asset, amount]) => `${amount} ${asset}`).join(", ") || "Nog geen exchange fees"],
+  ];
+  for (const [label, value] of values) {
+    const row = document.createElement("div"); row.className = "exchange-data-row";
+    const title = document.createElement("strong"); title.textContent = label;
+    const detail = document.createElement("span"); detail.textContent = String(value ?? "onbekend");
+    row.append(title, detail); root.append(row);
+  }
+  for (const position of portfolio.positions || []) {
+    const row = document.createElement("div"); row.className = "exchange-data-row";
+    const title = document.createElement("strong"); title.textContent = `${position.symbol} · ${position.quantity} open`;
+    const detail = document.createElement("span"); detail.textContent = `Gem. entry ${position.averageEntry} USDT · waarde ${position.marketValue} USDT · unrealized ${position.unrealizedPnl} USDT · bescherming: ${position.protection || "niet bevestigd"}`;
+    row.append(title, detail); root.append(row);
+  }
+  const resume = document.getElementById("testnet-resume-risk");
+  if (resume) resume.hidden = !portfolio.drawdownLocked;
 }
 function showTestnetError(message = "") {
   const node = document.getElementById("testnet-error"); node.textContent = message; node.hidden = !message;
@@ -1699,10 +1776,11 @@ document.getElementById("testnet-order-form")?.addEventListener("submit", async 
   try {
     const result = await exchangeRequest("/api/testnet/prepare", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({
       symbol:document.getElementById("testnet-symbol").value.trim().toUpperCase(), side:document.getElementById("testnet-side").value,
-      quantity:Number(document.getElementById("testnet-quantity").value), stopLoss:Number(document.getElementById("testnet-stop").value), takeProfit:Number(document.getElementById("testnet-target").value)
+      quantity:Number(document.getElementById("testnet-quantity").value), stopLoss:Number(document.getElementById("testnet-stop").value), takeProfit:Number(document.getElementById("testnet-target").value),
+      riskSettings:testnetPhase7RiskSettings()
     })});
     preparedTestnetOrder = result.order;
-    const fields = [["Exchange",preparedTestnetOrder.exchange],["Paar",preparedTestnetOrder.symbol],["Koop/verkoop",preparedTestnetOrder.side],["Hoeveelheid",preparedTestnetOrder.quantity],["Actuele prijs",preparedTestnetOrder.price+" USDT"],["Ordertype",preparedTestnetOrder.orderType],["Stop-loss",preparedTestnetOrder.stopLoss],["Take-profit",preparedTestnetOrder.takeProfit],["Maximaal risico",preparedTestnetOrder.maxRisk+" USDT"],["Geschatte kosten",preparedTestnetOrder.estimatedFees+" USDT"],["Beschikbare balans",preparedTestnetOrder.availableBalance+" USDT"],["Prijstijdstip",formatLocalTime(preparedTestnetOrder.priceTimestamp)]];
+    const fields = [["Exchange",preparedTestnetOrder.exchange],["Paar",preparedTestnetOrder.symbol],["Koop/verkoop",preparedTestnetOrder.side],["Hoeveelheid",preparedTestnetOrder.quantity],["Actuele prijs",preparedTestnetOrder.price+" USDT"],["Ordertype",preparedTestnetOrder.orderType],["Stop-loss",preparedTestnetOrder.stopLoss],["Take-profit",preparedTestnetOrder.takeProfit],["Maximaal risico",preparedTestnetOrder.maxRisk+" USDT"],["Geschatte kosten",preparedTestnetOrder.estimatedFees+" USDT"],["Commissiepercentage",(preparedTestnetOrder.commissionRate*100).toFixed(4)+"% per fill"],["Beschikbare balans",preparedTestnetOrder.availableBalance+" USDT"],["Prijstijdstip",formatLocalTime(preparedTestnetOrder.priceTimestamp)]];
     const summary=document.getElementById("testnet-order-summary"); summary.replaceChildren();
     for (const [label,value] of fields) {const line=document.createElement("div"); const key=document.createElement("strong");key.textContent=label;const val=document.createElement("span");val.textContent=String(value);line.append(key,val);summary.append(line);}
     document.getElementById("testnet-confirm-card").hidden=false;
@@ -1720,7 +1798,15 @@ document.getElementById("testnet-confirm")?.addEventListener("click", async even
   finally { button.disabled=false; }
 });
 document.getElementById("testnet-refresh")?.addEventListener("click", () => loadTestnetPanel().catch(e=>showTestnetError(e.message)));
-void loadTestnetPanel().catch(()=>{});
+document.getElementById("testnet-resume-risk")?.addEventListener("click", async event => {
+  const button = event.currentTarget; button.disabled = true;
+  try {
+    await exchangeRequest("/api/testnet/resume", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({confirmed:true})});
+    await loadTestnetPanel();
+  } catch (error) { showTestnetError(error.message || "De drawdownblokkade kon niet worden hervat."); }
+  finally { button.disabled = false; }
+});
+void loadTestnetPanel().catch(()=>setActiveMode("UNKNOWN"));
 document.documentElement.classList.add("app-ready");
 refreshMarket();
 window.setInterval(refreshMarket, REFRESH_INTERVAL_MS);
